@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DXF to GeoPackage Converter</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>DXF to GeoPackage Converter</h1>
+        <p class="subtitle">v1.0</p>
+    </header>
+
+    <main>
+        <!-- Upload -->
+        <section id="upload-section">
+            <div id="drop-zone" class="drop-zone">
+                <p>Drop .dxf file here or click to select</p>
+                <p class="sub">.dxf only</p>
+                <input type="file" id="file-input" accept=".dxf" hidden>
+            </div>
+        </section>
+
+        <!-- File Info -->
+        <section id="file-info" class="card hidden">
+            <h2>File</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Name</span>
+                    <span id="info-filename">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Size</span>
+                    <span id="info-filesize">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Range</span>
+                    <span id="info-coords">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Zone</span>
+                    <span id="info-zone">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="settings-panel" class="card hidden">
+            <h2>Settings</h2>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="scale-select">Scale</label>
+                    <select id="scale-select">
+                        <option value="0">None (raw)</option>
+                        <option value="200">1:200</option>
+                        <option value="250">1:250</option>
+                        <option value="300" selected>1:300</option>
+                        <option value="500">1:500</option>
+                        <option value="1000">1:1000</option>
+                        <option value="2500">1:2500</option>
+                        <option value="5000">1:5000</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="datum-select">Datum</label>
+                    <select id="datum-select">
+                        <option value="JGD2011" selected>JGD2011</option>
+                        <option value="JGD2000">JGD2000</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="zone-select">Zone</label>
+                    <select id="zone-select"></select>
+                </div>
+                <div class="setting-item">
+                    <label for="output-crs">Output CRS</label>
+                    <select id="output-crs">
+                        <option value="source" selected>Source (JPC)</option>
+                        <option value="wgs84">WGS84 (4326)</option>
+                        <option value="custom">Custom EPSG</option>
+                    </select>
+                </div>
+                <div class="setting-item" id="custom-epsg-row" style="display:none">
+                    <label for="custom-epsg">EPSG</label>
+                    <input type="number" id="custom-epsg" placeholder="e.g. 3857">
+                </div>
+                <div class="setting-item">
+                    <label for="quality-select">Quality</label>
+                    <select id="quality-select">
+                        <option value="100" selected>100%</option>
+                        <option value="50">50%</option>
+                        <option value="30">30%</option>
+                    </select>
+                </div>
+                <div class="setting-item checkbox-item">
+                    <label>
+                        <input type="checkbox" id="auto-georef" checked>
+                        Auto Georeference
+                    </label>
+                </div>
+                <div class="setting-item checkbox-item">
+                    <label>
+                        <input type="checkbox" id="split-layers" checked>
+                        Split by Layer
+                    </label>
+                </div>
+            </div>
+
+            <button id="convert-btn" class="btn-primary">Convert</button>
+        </section>
+
+        <!-- Progress -->
+        <section id="progress-section" class="card hidden">
+            <h2>Progress</h2>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <span id="progress-text">0%</span>
+        </section>
+
+        <!-- Log -->
+        <section id="log-section" class="card hidden">
+            <h2>Log</h2>
+            <div id="log-output" class="log-output"></div>
+        </section>
+
+        <!-- Download -->
+        <section id="download-section" class="card hidden">
+            <h2>Output</h2>
+            <div id="download-links"></div>
+            <button id="reset-btn" class="btn-secondary">New file</button>
+        </section>
+    </main>
+
+    <footer>
+        <p>DXF to GeoPackage Converter</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

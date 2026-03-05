@@ -1,0 +1,7 @@
+flask>=3.0
+ezdxf
+geopandas
+fiona
+shapely
+pyproj
+numpy

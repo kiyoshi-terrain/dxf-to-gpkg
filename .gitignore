@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+.DS_Store
+.web_tmp/
+.claude/
+
+# Analysis/debug scripts
+analyze_*.py
+analyze_*.txt
+compare_*.py
+compare_*.png
+comparison*.png
+dxf_viewer.py
+
+# Test data
+*.DXF
+*.dxf
+*.kml
+/*.html
+*.gpkg
+*.png
+
+# Project docs (not app)
+CLAUDE.md
