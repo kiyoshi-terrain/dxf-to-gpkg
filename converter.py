@@ -80,6 +80,28 @@ ZONE_ORIGINS_LATLON = {
     19: (26.0, 154.0),
 }
 
+# 各系のおおよその地理的カバー範囲 (lon_min, lon_max, lat_min, lat_max)
+# 自己整合性チェック: 逆変換結果がその系のカバー範囲に入るか確認
+ZONE_BOUNDS = {
+    1: (128.0, 130.5, 30.0, 34.0),    # 長崎,鹿児島離島
+    2: (129.5, 132.5, 30.5, 34.5),    # 福岡,佐賀,熊本,大分,宮崎,鹿児島
+    3: (130.5, 133.5, 33.5, 36.5),    # 山口,島根,広島
+    4: (132.0, 135.0, 32.0, 35.0),    # 香川,愛媛,徳島,高知
+    5: (133.0, 135.5, 34.0, 36.5),    # 兵庫,鳥取,岡山
+    6: (134.0, 137.0, 33.5, 36.5),    # 京都,大阪,福井,滋賀,三重,奈良,和歌山
+    7: (136.0, 138.5, 34.5, 37.5),    # 石川,富山,岐阜,愛知
+    8: (137.0, 140.5, 34.5, 38.5),    # 新潟,長野,山梨,静岡
+    9: (138.5, 141.5, 34.5, 38.0),    # 東京,福島,栃木,茨城,埼玉,千葉,群馬,神奈川
+    10: (139.0, 142.5, 37.5, 41.5),   # 青森,秋田,山形,岩手,宮城
+    11: (139.0, 141.5, 41.5, 45.5),   # 北海道西部
+    12: (141.0, 144.0, 42.0, 45.5),   # 北海道中央部
+    13: (143.0, 146.0, 42.0, 46.0),   # 北海道東部
+}
+
+# 測量点コードの系番号パターン（例: "09-000-M-019-00" → 系9）
+# SFC DXF形式では測量点コードの先頭2桁が系番号を示す
+SURVEY_POINT_CODE_PATTERN = re.compile(r'^(0[1-9]|1[0-9])-\d{3}-[A-Z]-\d{3}-\d{2}$')
+
 
 def analyze_dxf_coordinates(filepath: str) -> dict:
     """DXFファイルの座標範囲を解析し、座標系を推定する"""
@@ -101,8 +123,72 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
     msp = doc.modelspace()
     xs, ys = [], []
     # TEXT/MTEXTからグリッドラベル座標を抽出
-    real_xs = []  # X=... の実座標値
-    real_ys = []  # Y=... の実座標値
+    real_xs = []  # X=... の実座標値（northing）
+    real_ys = []  # Y=... の実座標値（easting）
+
+    def _extract_grid_label(text_content):
+        """テキスト内容からグリッドラベル座標値を抽出"""
+        t = text_content.strip()
+        if not t:
+            return
+        # X=3100, X=-36000 形式
+        m = re.match(r'^X\s*=\s*(-?\d+\.?\d*)', t)
+        if m:
+            real_xs.append(float(m.group(1)))
+            return
+        # Y=-10200, Y=12345 形式
+        m = re.match(r'^Y\s*=\s*(-?\d+\.?\d*)', t)
+        if m:
+            real_ys.append(float(m.group(1)))
+            return
+        # テキスト中に X= Y= を含む場合（例: "X=3100.000"）
+        mx = re.search(r'X\s*=\s*(-?\d+\.?\d*)', t)
+        my = re.search(r'Y\s*=\s*(-?\d+\.?\d*)', t)
+        if mx:
+            real_xs.append(float(mx.group(1)))
+        if my:
+            real_ys.append(float(my.group(1)))
+
+    def _get_text_content(entity):
+        """TEXT/MTEXTエンティティからテキスト内容を取得"""
+        dtype = entity.dxftype()
+        if dtype == 'TEXT':
+            return getattr(entity.dxf, 'text', '') or ''
+        elif dtype == 'MTEXT':
+            # MTEXTは .text プロパティ or .plain_text()
+            try:
+                return entity.plain_text()
+            except:
+                return getattr(entity.dxf, 'text', '') or ''
+        return ''
+
+    def _scan_block_combined(block):
+        """ブロック内のTEXT/MTEXTを結合してグリッドラベルを検出
+        SFC DXFでは座標ラベルが1文字ずつ別TEXTエンティティになっている"""
+        texts = []
+        for ent in block:
+            dtype = ent.dxftype()
+            if dtype in ('TEXT', 'MTEXT'):
+                texts.append(_get_text_content(ent))
+        if not texts:
+            return
+        combined = ''.join(texts)
+        # パターン1: "=3100X" → X=3100 (SFC形式: 文字がバラバラに配置)
+        # パターン2: "=-10600Y" → Y=-10600
+        if 'X' in combined and '=' in combined:
+            digits = ''.join(c for c in combined if c.isdigit() or c == '-' or c == '.')
+            if digits and digits not in ('-', '.'):
+                try:
+                    real_xs.append(float(digits))
+                except ValueError:
+                    pass
+        elif 'Y' in combined and '=' in combined:
+            digits = ''.join(c for c in combined if c.isdigit() or c == '-' or c == '.')
+            if digits and digits not in ('-', '.'):
+                try:
+                    real_ys.append(float(digits))
+                except ValueError:
+                    pass
 
     for entity in msp:
         result['entity_count'] += 1
@@ -127,24 +213,51 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
 
         # TEXT/MTEXTからグリッドラベル座標値を抽出
         try:
-            if entity.dxftype() in ('TEXT', 'MTEXT'):
-                t = (dxf.text if hasattr(dxf, 'text') else '').strip()
-                # X=3100, X=-36000 形式
-                m = re.match(r'^X=(-?\d+\.?\d*)$', t)
-                if m:
-                    real_xs.append(float(m.group(1)))
-                    continue
-                # 0013=X 形式（逆順）
-                m = re.match(r'^(\d{4,})=X$', t)
-                if m:
-                    real_xs.append(float(m.group(1)[::-1]))
-                    continue
-                # Y=-10200, Y=12345 形式
-                m = re.match(r'^Y=(-?\d+\.?\d*)$', t)
-                if m:
-                    real_ys.append(float(m.group(1)))
+            dtype = entity.dxftype()
+            if dtype in ('TEXT', 'MTEXT'):
+                _extract_grid_label(_get_text_content(entity))
+            elif dtype == 'INSERT':
+                # INSERTブロック内のTEXTを結合してグリッドラベル検出
+                try:
+                    blk = doc.blocks.get(dxf.name)
+                    if blk:
+                        _scan_block_combined(blk)
+                except:
+                    pass
         except:
             pass
+
+    # ブロック内テキストを結合して系番号を検出
+    text_zone_hint = None
+    zone_code_votes = {}  # 測量点コードから得た系番号の投票
+    for block in doc.blocks:
+        if block.name.startswith('*'):
+            continue
+        texts = []
+        for ent in block:
+            if ent.dxftype() in ('TEXT', 'MTEXT'):
+                texts.append(_get_text_content(ent))
+        if texts:
+            combined = ''.join(texts)
+            # "第N系" や "N系" パターンを検出
+            m = re.search(r'第?(\d{1,2})系', combined)
+            if m and not text_zone_hint:
+                z = int(m.group(1))
+                if 1 <= z <= 19:
+                    text_zone_hint = z
+            # 測量点コードから系番号を抽出（例: "09-000-M-019-00" → 9系）
+            m = SURVEY_POINT_CODE_PATTERN.match(combined)
+            if m:
+                z = int(m.group(1))
+                if 1 <= z <= 19:
+                    zone_code_votes[z] = zone_code_votes.get(z, 0) + 1
+
+    # 測量点コードの投票が最も多い系番号を採用
+    if zone_code_votes and not text_zone_hint:
+        text_zone_hint = max(zone_code_votes, key=zone_code_votes.get)
+
+    result['_text_zone_hint'] = text_zone_hint
+    result['_zone_code_votes'] = zone_code_votes
 
     if not xs:
         return result
@@ -154,14 +267,20 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
     result['y_min'] = min(ys)
     result['y_max'] = max(ys)
 
+    # デバッグ: 検出結果を記録
+    result['_debug_real_xs'] = real_xs[:10] if real_xs else []
+    result['_debug_real_ys'] = real_ys[:10] if real_ys else []
+
     # グリッドラベルから実座標が取れた場合はそちらで系番号を判定
     if real_xs and real_ys:
-        cx = (min(real_xs) + max(real_xs)) / 2
-        cy = (min(real_ys) + max(real_ys)) / 2
+        cx = (min(real_xs) + max(real_xs)) / 2  # northing中心
+        cy = (min(real_ys) + max(real_ys)) / 2  # easting中心
         result['coord_type'] = '平面直角座標系（グリッドラベルから検出）'
         result['real_x_range'] = [min(real_xs), max(real_xs)]
         result['real_y_range'] = [min(real_ys), max(real_ys)]
 
+        # 自己整合性チェック: 各系で逆変換し、結果がその系の
+        # カバー範囲内に入るかどうかで正しい系番号を判定する
         candidates = []
         for zone_num, epsg in JGD2011_EPSG.items():
             if zone_num >= 14:
@@ -172,22 +291,46 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
                     always_xy=True
                 )
                 lon, lat = t.transform(cy, cx)
-                if 122 < lon < 154 and 20 < lat < 46:
-                    lat0, lon0 = ZONE_ORIGINS_LATLON[zone_num]
-                    lon_diff = abs(lon - lon0)
-                    if lon_diff < 2.0:
-                        candidates.append((zone_num, lon_diff, lon, lat))
+                if not (122 < lon < 154 and 20 < lat < 46):
+                    continue
+                # 自己整合性: 変換結果がこの系のカバー範囲に入るか
+                bounds = ZONE_BOUNDS.get(zone_num)
+                in_bounds = False
+                if bounds:
+                    blon_min, blon_max, blat_min, blat_max = bounds
+                    in_bounds = (blon_min <= lon <= blon_max and
+                                 blat_min <= lat <= blat_max)
+                lat0, lon0 = ZONE_ORIGINS_LATLON[zone_num]
+                lon_diff = abs(lon - lon0)
+                lat_diff = abs(lat - lat0)
+                # 整合性のある系を優先（score小=良い）
+                score = lon_diff if in_bounds else lon_diff + 100
+                candidates.append((zone_num, score, lon, lat, in_bounds))
             except:
                 pass
 
         candidates.sort(key=lambda x: x[1])
-        result['zone_candidates'] = candidates[:3]
+        result['zone_candidates'] = [(z, s, lo, la) for z, s, lo, la, _ in candidates[:5]]
 
         if candidates:
+            # テキストから系番号ヒントがある場合、その系を自己整合性チェック候補から選択
             best = candidates[0]
+            if text_zone_hint:
+                for c in candidates:
+                    if c[0] == text_zone_hint and c[4]:  # in_bounds
+                        best = c
+                        break
+                else:
+                    # 自己整合性は不問でもテキストヒントを優先
+                    for c in candidates:
+                        if c[0] == text_zone_hint:
+                            best = c
+                            break
             result['suggested_zone'] = best[0]
             desc_lines = ['平面直角座標系（グリッドラベルから検出）— 候補:']
-            for z, ld, lon, lat in candidates[:3]:
+            for z, s, lon, lat, ib in candidates[:5]:
+                if s >= 100:
+                    continue
                 marker = '★' if z == best[0] else '  '
                 desc_lines.append(
                     f'  {marker} {z}系（{ZONE_DESCRIPTIONS[z]}）'

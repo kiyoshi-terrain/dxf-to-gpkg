@@ -85,6 +85,10 @@ def upload():
     analysis = {}
     try:
         raw = analyze_dxf_coordinates(str(filepath))
+        # デバッグ出力
+        print(f"[Zone Detection] grid labels X: {raw.get('_debug_real_xs', [])}")
+        print(f"[Zone Detection] grid labels Y: {raw.get('_debug_real_ys', [])}")
+        print(f"[Zone Detection] suggested_zone: {raw.get('suggested_zone')}")
         # JSON非対応型を変換
         analysis = {}
         for k, v in raw.items():
@@ -317,8 +321,9 @@ def cleanup(job_id):
 
 if __name__ == '__main__':
     _cleanup_old_jobs()
+    port = int(os.environ.get('PORT', 5050))
     print("=" * 50)
     print("  DXF → GeoPackage 変換ツール")
-    print("  http://localhost:5050")
+    print(f"  http://localhost:{port}")
     print("=" * 50)
-    app.run(host='127.0.0.1', port=5050, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -757,30 +757,8 @@ main {
         calc(7*var(--px)) calc(7*var(--px)) var(--fg);
 }
 
-/* Title bar invader (small, 1px grid) */
-.card h2::before,
-.invader-sm {
-    content: '';
-    display: inline-block;
-    width: 1px;
-    height: 1px;
-    background: var(--fg);
-    flex-shrink: 0;
-    border: none;
-    margin-right: 2px;
-    box-shadow:
-        2px 0 var(--fg), 8px 0 var(--fg),
-        3px 1px var(--fg), 7px 1px var(--fg),
-        2px 2px var(--fg), 3px 2px var(--fg), 4px 2px var(--fg), 5px 2px var(--fg), 6px 2px var(--fg), 7px 2px var(--fg), 8px 2px var(--fg),
-        1px 3px var(--fg), 2px 3px var(--fg), 4px 3px var(--fg), 5px 3px var(--fg), 6px 3px var(--fg), 8px 3px var(--fg), 9px 3px var(--fg),
-        0 4px var(--fg), 1px 4px var(--fg), 2px 4px var(--fg), 3px 4px var(--fg), 4px 4px var(--fg), 5px 4px var(--fg), 6px 4px var(--fg), 7px 4px var(--fg), 8px 4px var(--fg), 9px 4px var(--fg), 10px 4px var(--fg),
-        0 5px var(--fg), 2px 5px var(--fg), 3px 5px var(--fg), 4px 5px var(--fg), 5px 5px var(--fg), 6px 5px var(--fg), 7px 5px var(--fg), 8px 5px var(--fg), 10px 5px var(--fg),
-        0 6px var(--fg), 2px 6px var(--fg), 8px 6px var(--fg), 10px 6px var(--fg),
-        3px 7px var(--fg), 4px 7px var(--fg), 6px 7px var(--fg), 7px 7px var(--fg);
-    width: 12px;
-    height: 9px;
-    background: transparent;
-}
+/* Title bar close box - classic System 7 style */
+/* h2::before is already defined above as the close box */
 
 /* Main floating mascot */
 #mascot {
