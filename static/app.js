@@ -120,7 +120,7 @@ async function startConvert() {
     $('#log-output').innerHTML = '';
 
     const params = {
-        scale: parseInt($('#scale-select').value),
+        scale: parseInt($('#scale-input').value) || 0,
         datum: $('#datum-select').value,
         zone: parseInt(zoneSelect.value),
         output_crs: outputCrs.value,

@@ -50,17 +50,19 @@
             <h2>Settings</h2>
             <div class="settings-grid">
                 <div class="setting-item">
-                    <label for="scale-select">Scale</label>
-                    <select id="scale-select">
-                        <option value="0">None (raw)</option>
-                        <option value="200">1:200</option>
-                        <option value="250">1:250</option>
-                        <option value="300" selected>1:300</option>
-                        <option value="500">1:500</option>
-                        <option value="1000">1:1000</option>
-                        <option value="2500">1:2500</option>
-                        <option value="5000">1:5000</option>
-                    </select>
+                    <label for="scale-input">Scale (1:N)</label>
+                    <input type="number" id="scale-input" value="300" min="0" step="1"
+                           list="scale-presets" placeholder="e.g. 300">
+                    <datalist id="scale-presets">
+                        <option value="0" label="raw">
+                        <option value="200">
+                        <option value="250">
+                        <option value="300">
+                        <option value="500">
+                        <option value="1000">
+                        <option value="2500">
+                        <option value="5000">
+                    </datalist>
                 </div>
                 <div class="setting-item">
                     <label for="datum-select">Datum</label>
