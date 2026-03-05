@@ -180,6 +180,31 @@ main {
     color: var(--highlight-fg);
 }
 
+.drop-invader {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.drop-invader .invader {
+    --px: 3px;
+}
+
+.drop-zone:hover .invader::after,
+.drop-zone.drag-over .invader::after {
+    /* Invert colors on hover */
+    background: var(--highlight-fg);
+    box-shadow:
+        2px 0 var(--highlight-fg), 8px 0 var(--highlight-fg),
+        3px 1px var(--highlight-fg), 7px 1px var(--highlight-fg),
+        2px 2px var(--highlight-fg), 3px 2px var(--highlight-fg), 4px 2px var(--highlight-fg), 5px 2px var(--highlight-fg), 6px 2px var(--highlight-fg), 7px 2px var(--highlight-fg), 8px 2px var(--highlight-fg),
+        1px 3px var(--highlight-fg), 2px 3px var(--highlight-fg), 4px 3px var(--highlight-fg), 5px 3px var(--highlight-fg), 6px 3px var(--highlight-fg), 8px 3px var(--highlight-fg), 9px 3px var(--highlight-fg),
+        0 4px var(--highlight-fg), 1px 4px var(--highlight-fg), 2px 4px var(--highlight-fg), 3px 4px var(--highlight-fg), 4px 4px var(--highlight-fg), 5px 4px var(--highlight-fg), 6px 4px var(--highlight-fg), 7px 4px var(--highlight-fg), 8px 4px var(--highlight-fg), 9px 4px var(--highlight-fg), 10px 4px var(--highlight-fg),
+        0 5px var(--highlight-fg), 2px 5px var(--highlight-fg), 3px 5px var(--highlight-fg), 4px 5px var(--highlight-fg), 5px 5px var(--highlight-fg), 6px 5px var(--highlight-fg), 7px 5px var(--highlight-fg), 8px 5px var(--highlight-fg), 10px 5px var(--highlight-fg),
+        0 6px var(--highlight-fg), 2px 6px var(--highlight-fg), 8px 6px var(--highlight-fg), 10px 6px var(--highlight-fg),
+        3px 7px var(--highlight-fg), 4px 7px var(--highlight-fg), 6px 7px var(--highlight-fg), 7px 7px var(--highlight-fg);
+}
+
 .drop-zone p {
     color: var(--fg);
     font-size: 12px;
@@ -587,9 +612,10 @@ main {
 }
 
 .about-icon {
-    font-size: 48px;
-    line-height: 1;
-    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+    padding-top: 4px;
 }
 
 .about-name {
@@ -645,7 +671,118 @@ main {
         inset -1px -1px 0 var(--border-dark);
 }
 
-/* ═══ Mascot Character ═══ */
+/* ═══ Pixel Invader Character ═══ */
+
+/*
+ * 11x8 pixel grid (each cell = 2px)
+ * Row 0:   . . 1 . . . . . 1 . .
+ * Row 1:   . . . 1 . . . 1 . . .
+ * Row 2:   . . 1 1 1 1 1 1 1 . .
+ * Row 3:   . 1 1 . 1 1 1 . 1 1 .
+ * Row 4:   1 1 1 1 1 1 1 1 1 1 1
+ * Row 5:   1 . 1 1 1 1 1 1 1 . 1
+ * Row 6:   1 . 1 . . . . . 1 . 1
+ * Row 7:   . . . 1 1 . 1 1 . . .
+ */
+.invader {
+    --px: 2px;
+    width: calc(11 * var(--px));
+    height: calc(8 * var(--px));
+    position: relative;
+    image-rendering: pixelated;
+    background-color: transparent;
+    /* Pixel art via box-shadow on a 1px element */
+}
+
+.invader::after {
+    content: '';
+    display: block;
+    width: var(--px);
+    height: var(--px);
+    background: var(--fg);
+    box-shadow:
+        /* Row 0 */
+        calc(2*var(--px)) 0 var(--fg),
+        calc(8*var(--px)) 0 var(--fg),
+        /* Row 1 */
+        calc(3*var(--px)) calc(1*var(--px)) var(--fg),
+        calc(7*var(--px)) calc(1*var(--px)) var(--fg),
+        /* Row 2 */
+        calc(2*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(3*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(4*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(5*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(6*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(7*var(--px)) calc(2*var(--px)) var(--fg),
+        calc(8*var(--px)) calc(2*var(--px)) var(--fg),
+        /* Row 3 */
+        calc(1*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(2*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(4*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(5*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(6*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(8*var(--px)) calc(3*var(--px)) var(--fg),
+        calc(9*var(--px)) calc(3*var(--px)) var(--fg),
+        /* Row 4 */
+        0                  calc(4*var(--px)) var(--fg),
+        calc(1*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(2*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(3*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(4*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(5*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(6*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(7*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(8*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(9*var(--px)) calc(4*var(--px)) var(--fg),
+        calc(10*var(--px)) calc(4*var(--px)) var(--fg),
+        /* Row 5 */
+        0                  calc(5*var(--px)) var(--fg),
+        calc(2*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(3*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(4*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(5*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(6*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(7*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(8*var(--px)) calc(5*var(--px)) var(--fg),
+        calc(10*var(--px)) calc(5*var(--px)) var(--fg),
+        /* Row 6 */
+        0                  calc(6*var(--px)) var(--fg),
+        calc(2*var(--px)) calc(6*var(--px)) var(--fg),
+        calc(8*var(--px)) calc(6*var(--px)) var(--fg),
+        calc(10*var(--px)) calc(6*var(--px)) var(--fg),
+        /* Row 7 */
+        calc(3*var(--px)) calc(7*var(--px)) var(--fg),
+        calc(4*var(--px)) calc(7*var(--px)) var(--fg),
+        calc(6*var(--px)) calc(7*var(--px)) var(--fg),
+        calc(7*var(--px)) calc(7*var(--px)) var(--fg);
+}
+
+/* Title bar invader (small, 1px grid) */
+.card h2::before,
+.invader-sm {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 1px;
+    background: var(--fg);
+    flex-shrink: 0;
+    border: none;
+    margin-right: 2px;
+    box-shadow:
+        2px 0 var(--fg), 8px 0 var(--fg),
+        3px 1px var(--fg), 7px 1px var(--fg),
+        2px 2px var(--fg), 3px 2px var(--fg), 4px 2px var(--fg), 5px 2px var(--fg), 6px 2px var(--fg), 7px 2px var(--fg), 8px 2px var(--fg),
+        1px 3px var(--fg), 2px 3px var(--fg), 4px 3px var(--fg), 5px 3px var(--fg), 6px 3px var(--fg), 8px 3px var(--fg), 9px 3px var(--fg),
+        0 4px var(--fg), 1px 4px var(--fg), 2px 4px var(--fg), 3px 4px var(--fg), 4px 4px var(--fg), 5px 4px var(--fg), 6px 4px var(--fg), 7px 4px var(--fg), 8px 4px var(--fg), 9px 4px var(--fg), 10px 4px var(--fg),
+        0 5px var(--fg), 2px 5px var(--fg), 3px 5px var(--fg), 4px 5px var(--fg), 5px 5px var(--fg), 6px 5px var(--fg), 7px 5px var(--fg), 8px 5px var(--fg), 10px 5px var(--fg),
+        0 6px var(--fg), 2px 6px var(--fg), 8px 6px var(--fg), 10px 6px var(--fg),
+        3px 7px var(--fg), 4px 7px var(--fg), 6px 7px var(--fg), 7px 7px var(--fg);
+    width: 12px;
+    height: 9px;
+    background: transparent;
+}
+
+/* Main floating mascot */
 #mascot {
     position: fixed;
     bottom: 26px;
@@ -655,70 +792,28 @@ main {
     user-select: none;
 }
 
-.mascot-body {
-    width: 48px;
-    height: 48px;
-    background: var(--bg);
-    border: 2px solid var(--fg);
-    border-radius: 50%;
+.mascot-sprite {
+    --px: 4px;
+    width: calc(11 * var(--px));
+    height: calc(8 * var(--px));
     position: relative;
-    box-shadow:
-        inset 2px 2px 0 var(--border-light),
-        inset -2px -2px 0 var(--border-dark),
-        2px 2px 0 rgba(0,0,0,0.2);
-    animation: mascot-bounce 3s ease-in-out infinite;
+    animation: invader-float 2s ease-in-out infinite;
 }
 
-.mascot-face {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mascot-eye {
-    width: 6px;
-    height: 8px;
-    background: var(--fg);
-    border-radius: 50%;
-    position: absolute;
-    top: 14px;
-    transition: height 0.1s;
-}
-
-.mascot-eye.left { left: 14px; }
-.mascot-eye.right { right: 14px; }
-
-/* Blink */
-#mascot.blink .mascot-eye {
-    height: 2px;
-    top: 17px;
-    border-radius: 1px;
-}
-
-.mascot-mouth {
-    position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 12px;
-    height: 6px;
-    border-bottom: 2px solid var(--fg);
-    border-radius: 0 0 6px 6px;
+.mascot-sprite .invader {
+    --px: 4px;
 }
 
 /* Speech bubble */
 .mascot-speech {
     position: absolute;
-    bottom: 52px;
-    right: 0;
+    bottom: calc(100% + 6px);
+    right: -4px;
     background: var(--inset-bg);
     border: 1px solid var(--fg);
-    padding: 4px 8px;
+    padding: 3px 6px;
     font-size: 10px;
     white-space: nowrap;
-    border-radius: 4px;
     box-shadow: 1px 1px 0 rgba(0,0,0,0.15);
     opacity: 1;
     transition: opacity 0.3s;
@@ -727,53 +822,48 @@ main {
 .mascot-speech::after {
     content: '';
     position: absolute;
-    bottom: -6px;
-    right: 16px;
+    bottom: -5px;
+    right: 14px;
     width: 0;
     height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 6px solid var(--fg);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--fg);
 }
 
-@keyframes mascot-bounce {
+@keyframes invader-float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    50% { transform: translateY(-6px); }
 }
 
-/* Thinking animation during convert */
-#mascot.thinking .mascot-mouth {
-    animation: mascot-think 0.5s ease-in-out infinite;
+/* Thinking: side-to-side wiggle */
+#mascot.thinking .mascot-sprite {
+    animation: invader-think 0.3s ease-in-out infinite;
 }
 
-@keyframes mascot-think {
-    0%, 100% { width: 12px; height: 6px; border-radius: 0 0 6px 6px; }
-    50% { width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--fg); border-top: 0; }
+@keyframes invader-think {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
 }
 
-/* Happy animation on complete */
-#mascot.happy .mascot-eye {
-    height: 3px;
-    top: 16px;
-    border-radius: 3px 3px 0 0;
-    border-bottom: 0;
+/* Happy: jump */
+#mascot.happy .mascot-sprite {
+    animation: invader-jump 0.35s ease-out 4;
 }
 
-#mascot.happy .mascot-body {
-    animation: mascot-jump 0.4s ease-out 3;
+@keyframes invader-jump {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-14px) scale(1.15); }
 }
 
-@keyframes mascot-jump {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+/* Blink: briefly hide */
+#mascot.blink .invader::after {
+    opacity: 0.3;
 }
 
 @media (max-width: 540px) {
     .settings-grid, .info-grid { grid-template-columns: 1fr; }
     #mascot { bottom: 24px; right: 8px; }
-    .mascot-body { width: 36px; height: 36px; }
-    .mascot-eye { width: 4px; height: 6px; top: 10px; }
-    .mascot-eye.left { left: 10px; }
-    .mascot-eye.right { right: 10px; }
-    .mascot-mouth { bottom: 8px; width: 8px; height: 4px; }
+    .mascot-sprite .invader { --px: 3px; }
 }

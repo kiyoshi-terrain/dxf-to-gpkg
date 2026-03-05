@@ -129,7 +129,6 @@ async function uploadFile(file) {
         settingsPanel.classList.remove('hidden');
         clearBtn.classList.remove('hidden');
         dropZone.classList.add('has-file');
-        $('#drop-icon').textContent = '\uD83D\uDCC1';
         $('#drop-text').textContent = data.filename;
         setStatus(`Loaded: ${data.filename}`);
 
@@ -267,7 +266,7 @@ function showDownloads(files) {
         const a = document.createElement('a');
         a.href = `/api/download/${currentJobId}/${encodeURIComponent(f)}`;
         a.className = 'download-link';
-        a.textContent = `\uD83D\uDCBE ${f}`;
+        a.textContent = `>> ${f}`;
         a.download = f;
         c.appendChild(a);
     }
@@ -293,7 +292,6 @@ function resetUI() {
     convertBtn.textContent = 'Convert';
     fileInput.value = '';
     dropZone.classList.remove('has-file');
-    $('#drop-icon').textContent = '\uD83D\uDCC4';
     setStatus('Ready');
     mascotMood('');
 }
@@ -347,12 +345,8 @@ document.addEventListener('keydown', (e) => {
     const mascot = document.createElement('div');
     mascot.id = 'mascot';
     mascot.innerHTML = `
-        <div class="mascot-body">
-            <div class="mascot-face">
-                <div class="mascot-eye left"></div>
-                <div class="mascot-eye right"></div>
-                <div class="mascot-mouth"></div>
-            </div>
+        <div class="mascot-sprite">
+            <div class="invader"></div>
         </div>
         <div class="mascot-speech" id="mascot-speech">Hello!</div>
     `;
