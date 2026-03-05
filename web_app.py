@@ -21,6 +21,7 @@ from flask import (
     Flask, render_template, request, jsonify,
     send_file, Response, stream_with_context
 )
+from werkzeug.utils import secure_filename
 
 # converter.py を同ディレクトリからインポート
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +75,10 @@ def upload():
     job_dir = WORK_DIR / job_id
     job_dir.mkdir(exist_ok=True)
 
-    filepath = job_dir / f.filename
+    safe_name = secure_filename(f.filename)
+    if not safe_name:
+        return jsonify({'error': 'Invalid filename'}), 400
+    filepath = job_dir / safe_name
     f.save(str(filepath))
 
     # 座標系分析
@@ -105,7 +109,7 @@ def upload():
 
     jobs[job_id] = {
         'filepath': str(filepath),
-        'filename': f.filename,
+        'filename': safe_name,
         'analysis': analysis,
         'status': 'uploaded',
         'queue': None,
@@ -114,7 +118,7 @@ def upload():
 
     return jsonify({
         'job_id': job_id,
-        'filename': f.filename,
+        'filename': safe_name,
         'filesize': filepath.stat().st_size,
         'analysis': analysis,
         'coord_range': coord_range,
@@ -277,6 +281,11 @@ def download(job_id, filename):
     if job_id not in jobs:
         return jsonify({'error': 'ジョブが見つかりません'}), 404
 
+    job = jobs[job_id]
+    # パストラバーサル防止: 登録済みファイルのみ許可
+    if filename not in job.get('result_files', []):
+        return jsonify({'error': 'ファイルが見つかりません'}), 404
+
     filepath = WORK_DIR / job_id / filename
     if not filepath.exists():
         return jsonify({'error': 'ファイルが見つかりません'}), 404
@@ -291,7 +300,15 @@ def download(job_id, filename):
 @app.route('/api/cleanup/<job_id>', methods=['POST'])
 def cleanup(job_id):
     """一時ファイル削除"""
+    # パストラバーサル防止: 登録済みジョブのみ許可
+    if job_id not in jobs:
+        return jsonify({'status': 'ok'})
+
     job_dir = WORK_DIR / job_id
+    # ディレクトリがWORK_DIR配下であることを確認
+    if job_dir.resolve().parent != WORK_DIR.resolve():
+        return jsonify({'error': 'Invalid job ID'}), 400
+
     if job_dir.exists():
         shutil.rmtree(job_dir, ignore_errors=True)
     jobs.pop(job_id, None)
