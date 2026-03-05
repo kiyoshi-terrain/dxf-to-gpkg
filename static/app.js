@@ -14,9 +14,37 @@ const logSection = $('#log-section');
 const downloadSection = $('#download-section');
 const convertBtn = $('#convert-btn');
 const resetBtn = $('#reset-btn');
+const clearBtn = $('#clear-btn');
 const zoneSelect = $('#zone-select');
 const outputCrs = $('#output-crs');
 const customEpsgRow = $('#custom-epsg-row');
+const statusText = $('#status-text');
+
+// --- Status Bar ---
+function setStatus(msg) {
+    statusText.textContent = msg;
+}
+
+// --- Mascot ---
+function mascotSay(msg) {
+    const speech = $('#mascot-speech');
+    if (speech) {
+        speech.textContent = msg;
+        speech.style.opacity = '1';
+        clearTimeout(speech._timer);
+        speech._timer = setTimeout(() => { speech.style.opacity = '0'; }, 4000);
+    }
+}
+
+function mascotMood(mood) {
+    const m = $('#mascot');
+    if (m) {
+        m.className = mood || '';
+        if (mood === 'happy') {
+            setTimeout(() => { m.className = ''; }, 3500);
+        }
+    }
+}
 
 // --- Upload ---
 dropZone.addEventListener('click', () => fileInput.click());
@@ -27,6 +55,7 @@ fileInput.addEventListener('change', (e) => {
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('drag-over');
+    mascotSay('Drop it!');
 });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', (e) => {
@@ -37,21 +66,26 @@ dropZone.addEventListener('drop', (e) => {
 
 async function uploadFile(file) {
     if (!file.name.toLowerCase().endsWith('.dxf')) {
+        mascotSay('.dxf only!');
         alert('.dxf files only');
         return;
     }
     resetUI();
+    setStatus('Uploading...');
+    mascotSay('Reading...');
 
     const formData = new FormData();
     formData.append('file', file);
-    dropZone.querySelector('p').textContent = 'Uploading...';
+    $('#drop-text').textContent = 'Uploading...';
 
     try {
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
         const data = await res.json();
         if (!res.ok) {
             alert(data.error || 'Upload error');
-            dropZone.querySelector('p').textContent = 'Drop .dxf file here or click to select';
+            $('#drop-text').textContent = 'Drop .dxf file here or click to select';
+            setStatus('Ready');
+            mascotSay('Hmm...');
             return;
         }
 
@@ -84,18 +118,26 @@ async function uploadFile(file) {
         if (detected) {
             zoneSelect.value = String(detected);
             $('#info-zone').textContent = `${detected} (auto)`;
+            mascotSay(`Zone ${detected}!`);
         } else {
             zoneSelect.value = '9';
             $('#info-zone').textContent = '9 (default)';
+            mascotSay('Loaded!');
         }
 
         fileInfo.classList.remove('hidden');
         settingsPanel.classList.remove('hidden');
-        dropZone.querySelector('p').textContent = data.filename;
+        clearBtn.classList.remove('hidden');
+        dropZone.classList.add('has-file');
+        $('#drop-icon').textContent = '\uD83D\uDCC1';
+        $('#drop-text').textContent = data.filename;
+        setStatus(`Loaded: ${data.filename}`);
 
     } catch (err) {
         alert('Upload failed: ' + err.message);
-        dropZone.querySelector('p').textContent = 'Drop .dxf file here or click to select';
+        $('#drop-text').textContent = 'Drop .dxf file here or click to select';
+        setStatus('Ready');
+        mascotSay('Error!');
     }
 }
 
@@ -110,7 +152,10 @@ convertBtn.addEventListener('click', startConvert);
 async function startConvert() {
     if (!currentJobId) return;
     convertBtn.disabled = true;
-    convertBtn.textContent = 'CONVERTING...';
+    convertBtn.textContent = 'Converting...';
+    setStatus('Converting...');
+    mascotMood('thinking');
+    mascotSay('Working...');
 
     progressSection.classList.remove('hidden');
     logSection.classList.remove('hidden');
@@ -140,14 +185,20 @@ async function startConvert() {
             const data = await res.json();
             alert(data.error || 'Convert error');
             convertBtn.disabled = false;
-            convertBtn.textContent = 'CONVERT';
+            convertBtn.textContent = 'Convert';
+            setStatus('Error');
+            mascotMood('');
+            mascotSay('Oops!');
             return;
         }
         connectSSE();
     } catch (err) {
         alert('Convert failed: ' + err.message);
         convertBtn.disabled = false;
-        convertBtn.textContent = 'CONVERT';
+        convertBtn.textContent = 'Convert';
+        setStatus('Error');
+        mascotMood('');
+        mascotSay('Failed!');
     }
 }
 
@@ -161,17 +212,25 @@ function connectSSE() {
             appendLog(msg.msg, msg.level);
         } else if (msg.type === 'progress') {
             setProgress(msg.value);
+            setStatus(`Converting... ${msg.value}%`);
+            if (msg.value >= 90) mascotSay('Almost there!');
         } else if (msg.type === 'complete') {
             setProgress(100);
             appendLog('Done.', 'info');
             showDownloads(msg.files);
             convertBtn.disabled = false;
-            convertBtn.textContent = 'CONVERT';
+            convertBtn.textContent = 'Convert';
+            setStatus('Complete');
+            mascotMood('happy');
+            mascotSay('Done!');
             eventSource.close();
         } else if (msg.type === 'error') {
             appendLog('ERROR: ' + msg.msg, 'error');
             convertBtn.disabled = false;
-            convertBtn.textContent = 'CONVERT';
+            convertBtn.textContent = 'Convert';
+            setStatus('Error');
+            mascotMood('');
+            mascotSay('Error...');
             eventSource.close();
         }
     };
@@ -179,7 +238,8 @@ function connectSSE() {
     eventSource.onerror = () => {
         eventSource.close();
         convertBtn.disabled = false;
-        convertBtn.textContent = 'CONVERT';
+        convertBtn.textContent = 'Convert';
+        mascotMood('');
     };
 }
 
@@ -207,7 +267,7 @@ function showDownloads(files) {
         const a = document.createElement('a');
         a.href = `/api/download/${currentJobId}/${encodeURIComponent(f)}`;
         a.className = 'download-link';
-        a.textContent = `>> ${f}`;
+        a.textContent = `\uD83D\uDCBE ${f}`;
         a.download = f;
         c.appendChild(a);
     }
@@ -228,12 +288,95 @@ function resetUI() {
     progressSection.classList.add('hidden');
     logSection.classList.add('hidden');
     downloadSection.classList.add('hidden');
+    clearBtn.classList.add('hidden');
     convertBtn.disabled = false;
-    convertBtn.textContent = 'CONVERT';
+    convertBtn.textContent = 'Convert';
     fileInput.value = '';
+    dropZone.classList.remove('has-file');
+    $('#drop-icon').textContent = '\uD83D\uDCC4';
+    setStatus('Ready');
+    mascotMood('');
 }
 
-resetBtn.addEventListener('click', () => {
+function doClear() {
     resetUI();
-    dropZone.querySelector('p').textContent = 'Drop .dxf file here or click to select';
+    $('#drop-text').textContent = 'Drop .dxf file here or click to select';
+    mascotSay('Cleared!');
+}
+
+// Clear / Reset buttons
+clearBtn.addEventListener('click', doClear);
+resetBtn.addEventListener('click', doClear);
+
+// --- Menu Bar ---
+$('#menu-open')?.addEventListener('click', () => fileInput.click());
+$('#menu-clear')?.addEventListener('click', doClear);
+$('#menu-reset')?.addEventListener('click', () => location.reload());
+
+// About dialog
+$('#menu-about')?.addEventListener('click', () => {
+    const mem = performance?.memory;
+    if (mem) {
+        $('#about-mem').textContent =
+            `Memory: ${(mem.usedJSHeapSize / 1024 / 1024).toFixed(1)} MB used`;
+    }
+    $('#about-overlay').classList.remove('hidden');
 });
+$('#about-ok')?.addEventListener('click', () => {
+    $('#about-overlay').classList.add('hidden');
+});
+$('#about-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) $('#about-overlay').classList.add('hidden');
+});
+
+// --- Keyboard Shortcuts ---
+document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey) {
+        if (e.key === 'o' || e.key === 'O') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    }
+    if (e.key === 'Escape') {
+        $('#about-overlay')?.classList.add('hidden');
+    }
+});
+
+// --- Mascot Character (created dynamically) ---
+(function initMascot() {
+    const mascot = document.createElement('div');
+    mascot.id = 'mascot';
+    mascot.innerHTML = `
+        <div class="mascot-body">
+            <div class="mascot-face">
+                <div class="mascot-eye left"></div>
+                <div class="mascot-eye right"></div>
+                <div class="mascot-mouth"></div>
+            </div>
+        </div>
+        <div class="mascot-speech" id="mascot-speech">Hello!</div>
+    `;
+    document.body.appendChild(mascot);
+
+    // Blink at random intervals
+    setInterval(() => {
+        mascot.classList.add('blink');
+        setTimeout(() => mascot.classList.remove('blink'), 200);
+    }, 3000 + Math.random() * 2000);
+
+    // Click to get random message
+    mascot.addEventListener('click', () => {
+        const msgs = [
+            'Hello!', 'Drop a DXF!', 'Nice day!',
+            'GeoPackage!', 'JPC Zone 9!', 'Affine!',
+            'Let\'s convert!', 'System 7!',
+        ];
+        mascotSay(msgs[Math.floor(Math.random() * msgs.length)]);
+    });
+
+    // Hide speech after initial delay
+    setTimeout(() => {
+        const speech = $('#mascot-speech');
+        if (speech) speech.style.opacity = '0';
+    }, 3000);
+})();

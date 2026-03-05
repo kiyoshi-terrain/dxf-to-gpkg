@@ -8,14 +8,58 @@
 </head>
 <body>
 
+    <!-- System 7 Menu Bar -->
+    <div class="menubar">
+        <div class="menu-item" id="menu-apple">
+            <span class="menu-label">&#63743;</span>
+            <div class="menu-dropdown">
+                <div class="menu-option" id="menu-about">About This App...</div>
+                <div class="menu-separator"></div>
+                <div class="menu-option disabled">Scrapbook</div>
+                <div class="menu-option disabled">Alarm Clock</div>
+                <div class="menu-option disabled">Key Caps</div>
+            </div>
+        </div>
+        <div class="menu-item" id="menu-file">
+            <span class="menu-label">File</span>
+            <div class="menu-dropdown">
+                <div class="menu-option" id="menu-open">Open... <span class="shortcut">&#8984;O</span></div>
+                <div class="menu-separator"></div>
+                <div class="menu-option" id="menu-clear">Clear</div>
+                <div class="menu-separator"></div>
+                <div class="menu-option disabled">Quit <span class="shortcut">&#8984;Q</span></div>
+            </div>
+        </div>
+        <div class="menu-item">
+            <span class="menu-label">Edit</span>
+            <div class="menu-dropdown">
+                <div class="menu-option disabled">Undo <span class="shortcut">&#8984;Z</span></div>
+                <div class="menu-separator"></div>
+                <div class="menu-option disabled">Cut <span class="shortcut">&#8984;X</span></div>
+                <div class="menu-option disabled">Copy <span class="shortcut">&#8984;C</span></div>
+                <div class="menu-option disabled">Paste <span class="shortcut">&#8984;V</span></div>
+            </div>
+        </div>
+        <div class="menu-item">
+            <span class="menu-label">Special</span>
+            <div class="menu-dropdown">
+                <div class="menu-option" id="menu-reset">Restart</div>
+                <div class="menu-separator"></div>
+                <div class="menu-option disabled">Empty Trash...</div>
+            </div>
+        </div>
+    </div>
+
     <main>
         <!-- Upload -->
         <section id="upload-section">
             <div id="drop-zone" class="drop-zone">
-                <p>Drop .dxf file here or click to select</p>
+                <div class="drop-icon" id="drop-icon">&#x1F4C4;</div>
+                <p id="drop-text">Drop .dxf file here or click to select</p>
                 <p class="sub">.dxf only</p>
                 <input type="file" id="file-input" accept=".dxf" hidden>
             </div>
+            <button id="clear-btn" class="btn-secondary hidden">Clear</button>
         </section>
 
         <!-- File Info -->
@@ -130,6 +174,31 @@
             <button id="reset-btn" class="btn-secondary">New File</button>
         </section>
     </main>
+
+    <!-- Status Bar -->
+    <div class="statusbar">
+        <span id="status-text">Ready</span>
+        <span id="status-mem"></span>
+    </div>
+
+    <!-- About Dialog -->
+    <div id="about-overlay" class="dialog-overlay hidden">
+        <div class="dialog">
+            <div class="dialog-title">
+                <span class="stripes-left"></span>
+                <span class="dialog-title-text">About</span>
+                <span class="stripes-right"></span>
+            </div>
+            <div class="dialog-body">
+                <div class="about-icon">&#x1F5FA;</div>
+                <div class="about-name">DXF to GeoPackage Converter</div>
+                <div class="about-ver">Version 1.0</div>
+                <div class="about-copy">&copy; 2025</div>
+                <div class="about-mem" id="about-mem"></div>
+                <button id="about-ok" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/app.js"></script>
 </body>
