@@ -100,6 +100,9 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
 
     msp = doc.modelspace()
     xs, ys = [], []
+    # TEXT/MTEXTからグリッドラベル座標を抽出
+    real_xs = []  # X=... の実座標値
+    real_ys = []  # Y=... の実座標値
 
     for entity in msp:
         result['entity_count'] += 1
@@ -122,6 +125,27 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
         except:
             pass
 
+        # TEXT/MTEXTからグリッドラベル座標値を抽出
+        try:
+            if entity.dxftype() in ('TEXT', 'MTEXT'):
+                t = (dxf.text if hasattr(dxf, 'text') else '').strip()
+                # X=3100, X=-36000 形式
+                m = re.match(r'^X=(-?\d+\.?\d*)$', t)
+                if m:
+                    real_xs.append(float(m.group(1)))
+                    continue
+                # 0013=X 形式（逆順）
+                m = re.match(r'^(\d{4,})=X$', t)
+                if m:
+                    real_xs.append(float(m.group(1)[::-1]))
+                    continue
+                # Y=-10200, Y=12345 形式
+                m = re.match(r'^Y=(-?\d+\.?\d*)$', t)
+                if m:
+                    real_ys.append(float(m.group(1)))
+        except:
+            pass
+
     if not xs:
         return result
 
@@ -130,28 +154,66 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
     result['y_min'] = min(ys)
     result['y_max'] = max(ys)
 
-    x_range = abs(result['x_max'] - result['x_min'])
-    y_range = abs(result['y_max'] - result['y_min'])
+    # グリッドラベルから実座標が取れた場合はそちらで系番号を判定
+    if real_xs and real_ys:
+        cx = (min(real_xs) + max(real_xs)) / 2
+        cy = (min(real_ys) + max(real_ys)) / 2
+        result['coord_type'] = '平面直角座標系（グリッドラベルから検出）'
+        result['real_x_range'] = [min(real_xs), max(real_xs)]
+        result['real_y_range'] = [min(real_ys), max(real_ys)]
+
+        candidates = []
+        for zone_num, epsg in JGD2011_EPSG.items():
+            if zone_num >= 14:
+                continue
+            try:
+                t = Transformer.from_crs(
+                    CRS.from_epsg(epsg), CRS.from_epsg(4326),
+                    always_xy=True
+                )
+                lon, lat = t.transform(cy, cx)
+                if 122 < lon < 154 and 20 < lat < 46:
+                    lat0, lon0 = ZONE_ORIGINS_LATLON[zone_num]
+                    lon_diff = abs(lon - lon0)
+                    if lon_diff < 2.0:
+                        candidates.append((zone_num, lon_diff, lon, lat))
+            except:
+                pass
+
+        candidates.sort(key=lambda x: x[1])
+        result['zone_candidates'] = candidates[:3]
+
+        if candidates:
+            best = candidates[0]
+            result['suggested_zone'] = best[0]
+            desc_lines = ['平面直角座標系（グリッドラベルから検出）— 候補:']
+            for z, ld, lon, lat in candidates[:3]:
+                marker = '★' if z == best[0] else '  '
+                desc_lines.append(
+                    f'  {marker} {z}系（{ZONE_DESCRIPTIONS[z]}）'
+                    f'→ 緯度{lat:.4f}° 経度{lon:.4f}°'
+                )
+            result['coord_type'] = '\n'.join(desc_lines)
+        return result
+
     x_abs = max(abs(result['x_min']), abs(result['x_max']))
     y_abs = max(abs(result['y_min']), abs(result['y_max']))
 
-    # 座標系の推定
+    # エンティティ座標からの推定（フォールバック）
     if 120 < x_abs < 155 and 20 < y_abs < 50:
         result['coord_type'] = '緯度経度 (WGS84/JGD2011)'
     elif x_abs < 500 and y_abs < 500:
         result['coord_type'] = 'ローカル座標 (図面原点基準の可能性)'
     elif x_abs > 500 or y_abs > 500:
-        # 平面直角座標系の可能性
         result['coord_type'] = '平面直角座標系の可能性'
 
         cx = (result['x_min'] + result['x_max']) / 2
         cy = (result['y_min'] + result['y_max']) / 2
 
-        # 本土の主要系(1-13)で変換し、変換先の緯度経度を候補として表示
         candidates = []
         for zone_num, epsg in JGD2011_EPSG.items():
             if zone_num >= 14:
-                continue  # 離島系は除外
+                continue
             try:
                 t = Transformer.from_crs(
                     CRS.from_epsg(epsg), CRS.from_epsg(4326),
@@ -161,13 +223,13 @@ def analyze_dxf_coordinates(filepath: str) -> dict:
                 if 128 < lon < 146 and 26 < lat < 46:
                     lat0, lon0 = ZONE_ORIGINS_LATLON[zone_num]
                     lon_diff = abs(lon - lon0)
-                    if lon_diff < 1.5:  # 系の適用範囲内（経度差1.5度以内）
+                    if lon_diff < 1.5:
                         candidates.append((zone_num, lon_diff, lon, lat))
             except:
                 pass
 
         candidates.sort(key=lambda x: x[1])
-        result['zone_candidates'] = candidates[:3]  # 上位3候補
+        result['zone_candidates'] = candidates[:3]
 
         if candidates:
             best = candidates[0]
