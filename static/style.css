@@ -1,14 +1,16 @@
-/* DXF to GeoPackage Converter - DOS Terminal Style */
+/* DXF to GeoPackage Converter - System 7 Style */
 
 :root {
-    --fg: #cccccc;
-    --fg-dim: #777777;
-    --fg-bright: #ffffff;
-    --bg: #0c0c0c;
-    --bg-panel: #141414;
-    --border: #444444;
-    --accent: #aaaaaa;
-    --bar: #999999;
+    --bg: #c0c0c0;
+    --bg-window: #ffffff;
+    --fg: #000000;
+    --fg-dim: #555555;
+    --highlight: #000080;
+    --highlight-fg: #ffffff;
+    --border-light: #ffffff;
+    --border-dark: #808080;
+    --border-darker: #404040;
+    --inset-bg: #ffffff;
 }
 
 * {
@@ -18,152 +20,276 @@
 }
 
 body {
-    font-family: 'SF Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
-    font-size: 13px;
+    font-family: 'Geneva', 'Helvetica Neue', 'Arial', sans-serif;
+    font-size: 12px;
     background: var(--bg);
     color: var(--fg);
     min-height: 100vh;
-    line-height: 1.5;
-}
-
-header {
-    padding: 1rem 1.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-}
-
-header h1 {
-    font-size: 13px;
-    font-weight: normal;
-    color: var(--fg-bright);
-    letter-spacing: 0.05em;
-}
-
-header .subtitle {
-    font-size: 11px;
-    color: var(--fg-dim);
+    line-height: 1.4;
+    /* Classic desktop pattern */
+    background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%23a0a0a0'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23a0a0a0'/%3E%3C/svg%3E");
 }
 
 main {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 1rem 1.5rem 2rem;
+    max-width: 520px;
+    margin: 16px auto;
+    padding: 0 8px;
 }
 
 footer {
-    text-align: center;
-    padding: 1rem;
-    color: var(--fg-dim);
-    font-size: 11px;
-    border-top: 1px solid var(--border);
-}
-
-/* Panels */
-.card {
-    border: 1px solid var(--border);
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    background: var(--bg-panel);
-}
-
-.card h2 {
-    font-size: 11px;
-    font-weight: normal;
-    color: var(--fg-dim);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    display: none;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Drop Zone */
+/* ─── System 7 Window Chrome ─── */
+.window {
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow:
+        1px 1px 0 var(--fg),
+        inset 1px 1px 0 var(--border-light),
+        inset -1px -1px 0 var(--border-dark);
+    margin-bottom: 8px;
+}
+
+.window-title {
+    background: var(--bg);
+    border-bottom: 1px solid var(--fg);
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+    /* Pinstripe pattern */
+    background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 1px,
+        var(--bg) 1px,
+        var(--bg) 2px
+    );
+}
+
+.window-title .close-box {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--fg);
+    background: var(--bg);
+    flex-shrink: 0;
+}
+
+.window-title .title-text {
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+    background: var(--bg);
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.window-title .stripes {
+    flex: 1;
+    height: 10px;
+    background: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 1px,
+        var(--fg) 1px,
+        var(--fg) 2px,
+        transparent 2px,
+        transparent 3px
+    );
+}
+
+.window-body {
+    padding: 12px;
+    background: var(--bg);
+}
+
+/* ─── Drop Zone ─── */
 .drop-zone {
-    border: 1px dashed var(--border);
-    padding: 2rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow:
+        1px 1px 0 var(--fg),
+        inset 1px 1px 0 var(--border-light),
+        inset -1px -1px 0 var(--border-dark);
+    padding: 24px 12px;
     text-align: center;
     cursor: pointer;
-    margin-bottom: 0.75rem;
-    background: var(--bg-panel);
+    margin-bottom: 8px;
 }
 
 .drop-zone:hover,
 .drop-zone.drag-over {
-    border-color: var(--fg);
-    background: #1a1a1a;
+    background: var(--highlight);
+    color: var(--highlight-fg);
+}
+
+.drop-zone:hover p,
+.drop-zone.drag-over p {
+    color: var(--highlight-fg);
 }
 
 .drop-zone p {
     color: var(--fg);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .drop-zone .sub {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--fg-dim);
-    margin-top: 0.25rem;
+    margin-top: 4px;
 }
 
-/* Info Grid */
+.drop-zone:hover .sub,
+.drop-zone.drag-over .sub {
+    color: var(--highlight-fg);
+}
+
+/* ─── Card (as System 7 window) ─── */
+.card {
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow:
+        1px 1px 0 var(--fg),
+        inset 1px 1px 0 var(--border-light),
+        inset -1px -1px 0 var(--border-dark);
+    margin-bottom: 8px;
+    padding: 0;
+}
+
+.card h2 {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--fg);
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--fg);
+    text-transform: none;
+    letter-spacing: 0;
+    display: flex;
+    align-items: center;
+    height: 20px;
+    gap: 6px;
+    /* Title bar stripes */
+    background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 1px,
+        var(--fg) 1px,
+        var(--fg) 2px,
+        transparent 2px,
+        transparent 3px
+    );
+}
+
+.card h2::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--fg);
+    background: var(--bg);
+    flex-shrink: 0;
+}
+
+.card h2 span,
+.card h2 {
+    background: var(--bg);
+    padding: 0 6px;
+}
+
+.card > *:not(h2) {
+    padding: 0 12px;
+}
+
+.card > *:first-child:not(h2) {
+    padding-top: 10px;
+}
+
+.card > *:last-child {
+    padding-bottom: 10px;
+}
+
+/* ─── Info Grid ─── */
 .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.4rem 1.5rem;
+    gap: 4px 16px;
+    padding: 10px 12px;
 }
 
 .info-item {
     display: flex;
-    gap: 0.5rem;
+    gap: 4px;
 }
 
 .info-item .label {
-    font-size: 11px;
-    color: var(--fg-dim);
-    min-width: 8ch;
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--fg);
+    min-width: 6ch;
+}
+
+.info-item .label::after {
+    content: ':';
 }
 
 .info-item span:last-child {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--fg);
     word-break: break-all;
 }
 
-/* Settings */
+/* ─── Settings Grid ─── */
 .settings-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1.5rem;
-    margin-bottom: 0.75rem;
+    gap: 8px 16px;
+    margin-bottom: 10px;
+    padding: 10px 12px 0;
 }
 
 .setting-item {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 2px;
 }
 
 .setting-item label {
-    font-size: 11px;
-    color: var(--fg-dim);
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--fg);
 }
 
+/* System 7 inset field */
 .setting-item select,
 .setting-item input[type="number"] {
-    background: var(--bg);
+    background: var(--inset-bg);
     color: var(--fg);
-    border: 1px solid var(--border);
-    padding: 0.3rem 0.4rem;
-    font-family: inherit;
-    font-size: 13px;
+    border: 1px solid var(--border-darker);
+    border-top-color: var(--border-dark);
+    border-left-color: var(--border-dark);
+    border-bottom-color: var(--border-light);
+    border-right-color: var(--border-light);
+    padding: 2px 4px;
+    font-family: 'Geneva', 'Helvetica Neue', 'Arial', sans-serif;
+    font-size: 12px;
     outline: none;
+    box-shadow: inset 1px 1px 0 var(--border-dark);
 }
 
 .setting-item select:focus,
 .setting-item input:focus {
-    border-color: var(--fg);
+    outline: 2px solid var(--highlight);
+    outline-offset: 0;
 }
 
+/* Checkbox - System 7 style */
 .checkbox-item {
     flex-direction: row !important;
     align-items: center;
@@ -172,84 +298,142 @@ footer {
 .checkbox-item label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 6px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: normal;
     color: var(--fg);
 }
 
 .checkbox-item input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--fg);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--fg);
+    background: var(--inset-bg);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
 }
 
-/* Buttons */
+.checkbox-item input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 8px;
+    height: 8px;
+    background: var(--fg);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+/* ─── Buttons - System 7 rounded rect ─── */
 .btn-primary {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--fg);
+    padding: 4px 16px;
+    border: 2px solid var(--fg);
+    border-radius: 8px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: bold;
     cursor: pointer;
-    color: var(--bg);
-    background: var(--fg);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    color: var(--fg);
+    background: var(--bg);
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 0 12px 0;
+    width: calc(100% - 24px);
+    /* Default button - double border */
+    box-shadow:
+        0 0 0 2px var(--bg),
+        0 0 0 4px var(--fg);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--fg-bright);
+    background: var(--highlight);
+    color: var(--highlight-fg);
+}
+
+.btn-primary:active:not(:disabled) {
+    background: var(--fg);
+    color: var(--bg);
 }
 
 .btn-primary:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    color: var(--border-dark);
+    border-color: var(--border-dark);
+    box-shadow:
+        0 0 0 2px var(--bg),
+        0 0 0 4px var(--border-dark);
+    cursor: default;
 }
 
 .btn-secondary {
-    width: 100%;
-    padding: 0.4rem;
-    border: 1px solid var(--border);
+    width: calc(100% - 24px);
+    margin: 6px 12px 0;
+    padding: 4px 16px;
+    border: 2px solid var(--fg);
+    border-radius: 8px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     color: var(--fg);
-    background: transparent;
-    margin-top: 0.5rem;
+    background: var(--bg);
 }
 
 .btn-secondary:hover {
-    border-color: var(--fg);
+    background: var(--highlight);
+    color: var(--highlight-fg);
 }
 
-/* Progress Bar */
+/* ─── Progress Bar - System 7 ─── */
 .progress-bar-container {
-    height: 4px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    margin-bottom: 0.3rem;
+    height: 14px;
+    background: var(--inset-bg);
+    border: 1px solid var(--border-darker);
+    border-top-color: var(--border-dark);
+    border-left-color: var(--border-dark);
+    border-bottom-color: var(--border-light);
+    border-right-color: var(--border-light);
+    box-shadow: inset 1px 1px 0 var(--border-dark);
+    margin: 10px 12px 4px;
+    padding: 1px;
 }
 
 .progress-bar {
     height: 100%;
-    background: var(--bar);
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--highlight),
+        var(--highlight) 3px,
+        var(--highlight-fg) 3px,
+        var(--highlight-fg) 6px
+    );
     transition: width 0.3s;
 }
 
 #progress-text {
-    font-size: 11px;
-    color: var(--fg-dim);
+    font-size: 10px;
+    color: var(--fg);
+    padding: 0 12px;
 }
 
-/* Log Output */
+/* ─── Log Output ─── */
 .log-output {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 0.5rem;
-    max-height: 250px;
+    background: var(--inset-bg);
+    border: 1px solid var(--border-darker);
+    border-top-color: var(--border-dark);
+    border-left-color: var(--border-dark);
+    border-bottom-color: var(--border-light);
+    border-right-color: var(--border-light);
+    box-shadow: inset 1px 1px 0 var(--border-dark);
+    padding: 6px;
+    margin: 10px 12px;
+    max-height: 200px;
     overflow-y: auto;
-    font-size: 12px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 10px;
     line-height: 1.4;
 }
 
@@ -260,30 +444,51 @@ footer {
 }
 
 .log-line.info { color: var(--fg); }
-.log-line.warning { color: var(--fg-bright); }
-.log-line.error { color: var(--fg-bright); font-weight: bold; }
+.log-line.warning { color: #804000; font-weight: bold; }
+.log-line.error { color: #cc0000; font-weight: bold; }
 
-/* Download Links */
+/* ─── Download Links ─── */
 .download-link {
     display: block;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    margin-bottom: 0.3rem;
+    padding: 4px 8px;
+    margin: 8px 12px 4px;
+    border: 1px solid var(--fg);
+    border-radius: 4px;
     text-decoration: none;
-    color: var(--fg-bright);
-    font-size: 13px;
+    color: var(--fg);
+    font-size: 12px;
+    background: var(--inset-bg);
 }
 
 .download-link:hover {
-    background: #1a1a1a;
-    border-color: var(--fg);
+    background: var(--highlight);
+    color: var(--highlight-fg);
 }
 
-/* Scrollbar */
-.log-output::-webkit-scrollbar { width: 6px; }
-.log-output::-webkit-scrollbar-track { background: transparent; }
-.log-output::-webkit-scrollbar-thumb { background: var(--border); }
+/* ─── System 7 Scrollbar ─── */
+.log-output::-webkit-scrollbar {
+    width: 16px;
+}
+.log-output::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-left: 1px solid var(--fg);
+}
+.log-output::-webkit-scrollbar-thumb {
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow:
+        inset 1px 1px 0 var(--border-light),
+        inset -1px -1px 0 var(--border-dark);
+}
+.log-output::-webkit-scrollbar-button:single-button {
+    height: 16px;
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow:
+        inset 1px 1px 0 var(--border-light),
+        inset -1px -1px 0 var(--border-dark);
+}
 
-@media (max-width: 600px) {
+@media (max-width: 540px) {
     .settings-grid, .info-grid { grid-template-columns: 1fr; }
 }
