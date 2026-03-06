@@ -1,5 +1,6 @@
 flask>=3.0
 gunicorn>=22.0
+pywebview>=5.0
 ezdxf
 geopandas
 fiona

@@ -262,13 +262,50 @@ function showDownloads(files) {
     downloadSection.classList.remove('hidden');
     const c = $('#download-links');
     c.innerHTML = '';
+    const isDesktop = !!(window.pywebview && window.pywebview.api);
+
     for (const f of files) {
-        const a = document.createElement('a');
-        a.href = `/api/download/${currentJobId}/${encodeURIComponent(f)}`;
-        a.className = 'download-link';
-        a.textContent = `>> ${f}`;
-        a.download = f;
-        c.appendChild(a);
+        if (isDesktop) {
+            // デスクトップアプリ: ネイティブ保存ダイアログ
+            const btn = document.createElement('button');
+            btn.className = 'download-link';
+            btn.textContent = `\u{1F4BE} Save: ${f}`;
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                btn.textContent = `Saving...`;
+                mascotSay('Where to save?');
+                try {
+                    const result = await window.pywebview.api.save_file(currentJobId, f);
+                    if (result.error) {
+                        mascotSay('Error!');
+                        alert(result.error);
+                    } else {
+                        const shortPath = result.path.replace(/^.*[\/\\]/, '');
+                        if (result.default) {
+                            mascotSay('In Downloads!');
+                            appendLog(`Saved to Downloads: ${shortPath}`, 'info');
+                        } else {
+                            mascotSay('Saved!');
+                            appendLog(`Saved: ${result.path}`, 'info');
+                        }
+                    }
+                } catch (err) {
+                    mascotSay('Error!');
+                    alert('Save failed: ' + err);
+                }
+                btn.disabled = false;
+                btn.textContent = `\u{1F4BE} Save: ${f}`;
+            });
+            c.appendChild(btn);
+        } else {
+            // ブラウザ: 通常のダウンロードリンク
+            const a = document.createElement('a');
+            a.href = `/api/download/${currentJobId}/${encodeURIComponent(f)}`;
+            a.className = 'download-link';
+            a.textContent = `>> ${f}`;
+            a.download = f;
+            c.appendChild(a);
+        }
     }
 }
 

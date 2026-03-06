@@ -31,10 +31,18 @@ from converter import (
     JGD2011_EPSG, JGD2000_EPSG, ZONE_DESCRIPTIONS,
 )
 
-app = Flask(__name__)
+# PyInstaller バンドル時は _MEIPASS 内の templates/static を参照
+_base = os.environ.get('FLASK_APP_BASE')
+if _base:
+    app = Flask(__name__, template_folder=os.path.join(_base, 'templates'),
+                static_folder=os.path.join(_base, 'static'))
+else:
+    app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB
 
-WORK_DIR = Path(__file__).parent / '.web_tmp'
+# 一時ファイルディレクトリ
+_work = os.environ.get('DXF_WORK_DIR')
+WORK_DIR = Path(_work) if _work else Path(__file__).parent / '.web_tmp'
 WORK_DIR.mkdir(exist_ok=True)
 
 # ジョブ管理: job_id -> {queue, status, result_files, ...}

@@ -15,8 +15,11 @@ import sys
 import math
 import json
 import traceback
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+except ImportError:
+    tk = None  # Web版ではtkinter不要
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
@@ -1318,14 +1321,14 @@ def _build_ogr_label_style(
 
     Args:
         text: 表示テキスト
-        font: フォント名（空の場合はMS Gothic）
+        font: フォント名（空の場合はHiragino Sans）
         size: テキスト高さ（図面単位=ground units, "g"サフィックス付き）
         angle: 回転角度（度、反時計回り）
         color_hex: 色（#RRGGBB形式）
         anchor: アンカーポイント (1-12, 7=lower-left)
     """
     if not font:
-        font = 'MS Gothic'
+        font = 'Hiragino Sans'
     # フォント名から拡張子(.ttf, .shx等)を除去
     font = re.sub(r'\.(ttf|otf|shx|fon)$', '', font, flags=re.IGNORECASE)
     # テキスト内のダブルクォートをエスケープ
@@ -1696,28 +1699,29 @@ class DxfConverter:
             return {}
 
         # テキストスタイル情報を収集（DXFフォント名 → QGISフォントファミリー名）
+        # macOS互換: Hiragino Sans（ゴシック系）/ Hiragino Mincho ProN（明朝系）
         _FONT_FAMILY_MAP = {
-            'msgothic.ttc': 'MS Gothic',
-            'msgothic': 'MS Gothic',
-            'msgothic.ttf': 'MS Gothic',
-            'ms gothic': 'MS Gothic',
-            'ＭＳ ゴシック': 'MS Gothic',
-            'msゴシック': 'MS Gothic',
-            'mspgoth.ttc': 'MS PGothic',
-            'mspgothic': 'MS PGothic',
-            'ms pgothic': 'MS PGothic',
-            'ＭＳ Ｐゴシック': 'MS PGothic',
-            'msmincho.ttc': 'MS Mincho',
-            'msmincho': 'MS Mincho',
-            'ms mincho': 'MS Mincho',
-            'ＭＳ 明朝': 'MS Mincho',
-            'mspmincho.ttc': 'MS PMincho',
-            'ms pmincho': 'MS PMincho',
-            'ＭＳ Ｐ明朝': 'MS PMincho',
-            'yugothic': 'Yu Gothic',
-            'yugothb.ttc': 'Yu Gothic',
-            'yugothm.ttc': 'Yu Gothic',
-            'yumincho': 'Yu Mincho',
+            'msgothic.ttc': 'Hiragino Sans',
+            'msgothic': 'Hiragino Sans',
+            'msgothic.ttf': 'Hiragino Sans',
+            'ms gothic': 'Hiragino Sans',
+            'ＭＳ ゴシック': 'Hiragino Sans',
+            'msゴシック': 'Hiragino Sans',
+            'mspgoth.ttc': 'Hiragino Sans',
+            'mspgothic': 'Hiragino Sans',
+            'ms pgothic': 'Hiragino Sans',
+            'ＭＳ Ｐゴシック': 'Hiragino Sans',
+            'msmincho.ttc': 'Hiragino Mincho ProN',
+            'msmincho': 'Hiragino Mincho ProN',
+            'ms mincho': 'Hiragino Mincho ProN',
+            'ＭＳ 明朝': 'Hiragino Mincho ProN',
+            'mspmincho.ttc': 'Hiragino Mincho ProN',
+            'ms pmincho': 'Hiragino Mincho ProN',
+            'ＭＳ Ｐ明朝': 'Hiragino Mincho ProN',
+            'yugothic': 'Hiragino Sans',
+            'yugothb.ttc': 'Hiragino Sans',
+            'yugothm.ttc': 'Hiragino Sans',
+            'yumincho': 'Hiragino Mincho ProN',
             'arial.ttf': 'Arial',
             'arial': 'Arial',
             'times.ttf': 'Times New Roman',
@@ -1728,7 +1732,7 @@ class DxfConverter:
         def _map_font_family(dxf_font):
             """DXFフォント名をQGISフォントファミリー名にマッピング"""
             if not dxf_font:
-                return 'MS Gothic'
+                return 'Hiragino Sans'
             key = dxf_font.lower().strip()
             if key in _FONT_FAMILY_MAP:
                 return _FONT_FAMILY_MAP[key]
@@ -2660,32 +2664,153 @@ def save_to_geopackage(
                 split_gdfs[gpkg_name] = sub_gdf
         gdfs = split_gdfs
 
-    first_layer = True
+    # Fionaで最初のレイヤーを書き出し（GeoPackage作成）、
+    # 残りはsqlite3 + shapely WKBで直接書き込み
+    # （PyInstallerバンドル環境ではFionaが2回目以降の書き込みで失敗するため）
+    import sqlite3
+    from shapely import wkb as shapely_wkb
+
     total_features = 0
+    prepared = []  # [(layer_name, gdf), ...]
 
     for layer_name, gdf in gdfs.items():
         if gdf.empty:
             continue
-
         gdf = gdf.copy()
         gdf.set_crs(source_crs, inplace=True)
-
         if target_crs:
             gdf = gdf.to_crs(target_crs)
+        prepared.append((layer_name, gdf))
 
-        mode = 'w' if first_layer else 'a'
+    if not prepared:
+        messages.append("  書き込み可能なレイヤーがありません")
+    else:
+        # 最初のレイヤーはFiona/GDALで書き出し（GeoPackage骨格を作成）
+        first_name, first_gdf = prepared[0]
         try:
-            gdf.to_file(
-                output_path,
-                layer=layer_name,
-                driver='GPKG',
-                mode=mode,
-            )
-            total_features += len(gdf)
-            messages.append(f"  レイヤ '{layer_name}': {len(gdf)} フィーチャ")
-            first_layer = False
+            first_gdf.to_file(output_path, layer=first_name, driver='GPKG', mode='w')
+            total_features += len(first_gdf)
+            messages.append(f"  レイヤ '{first_name}': {len(first_gdf)} フィーチャ")
         except Exception as e:
-            messages.append(f"  レイヤ '{layer_name}' 書き込みエラー: {e}")
+            messages.append(f"  レイヤ '{first_name}' 書き込みエラー: {e}")
+
+        # 残りのレイヤーはsqlite3で直接テーブル作成＆データ挿入
+        srs_id = None
+        if os.path.exists(output_path):
+            conn = sqlite3.connect(output_path)
+            try:
+                row = conn.execute(
+                    "SELECT srs_id FROM gpkg_geometry_columns LIMIT 1"
+                ).fetchone()
+                if row:
+                    srs_id = row[0]
+            except Exception:
+                pass
+            conn.close()
+
+        for layer_name, gdf in prepared[1:]:
+            try:
+                # 非ジオメトリカラムを取得
+                geom_col = gdf.geometry.name
+                data_cols = [c for c in gdf.columns if c != geom_col]
+
+                # ジオメトリタイプを判定
+                geom_types = set()
+                for g in gdf.geometry:
+                    if g is not None and not g.is_empty:
+                        geom_types.add(g.geom_type)
+                gpkg_geom_type = 'GEOMETRY'
+                if geom_types == {'Point'}:
+                    gpkg_geom_type = 'POINT'
+                elif geom_types == {'LineString'} or geom_types == {'MultiLineString'}:
+                    gpkg_geom_type = 'LINESTRING'
+                elif geom_types == {'Polygon'} or geom_types == {'MultiPolygon'}:
+                    gpkg_geom_type = 'POLYGON'
+                elif geom_types <= {'LineString', 'MultiLineString'}:
+                    gpkg_geom_type = 'MULTILINESTRING'
+                elif geom_types <= {'Polygon', 'MultiPolygon'}:
+                    gpkg_geom_type = 'MULTIPOLYGON'
+
+                conn = sqlite3.connect(output_path)
+
+                # テーブル作成
+                col_defs = ['"fid" INTEGER PRIMARY KEY AUTOINCREMENT']
+                col_defs.append(f'"{geom_col}" BLOB')
+                for c in data_cols:
+                    dtype = gdf[c].dtype
+                    if dtype in ('int64', 'int32'):
+                        col_defs.append(f'"{c}" INTEGER')
+                    elif dtype in ('float64', 'float32'):
+                        col_defs.append(f'"{c}" REAL')
+                    else:
+                        col_defs.append(f'"{c}" TEXT')
+                conn.execute(f'CREATE TABLE IF NOT EXISTS "{layer_name}" ({", ".join(col_defs)})')
+
+                # データ挿入（GPKG標準WKBヘッダー付き）
+                insert_cols = [f'"{geom_col}"'] + [f'"{c}"' for c in data_cols]
+                placeholders = ','.join(['?'] * len(insert_cols))
+                insert_sql = f'INSERT INTO "{layer_name}" ({",".join(insert_cols)}) VALUES ({placeholders})'
+
+                rows_to_insert = []
+                bounds = [float('inf'), float('inf'), float('-inf'), float('-inf')]
+                for _, row in gdf.iterrows():
+                    geom = row[geom_col]
+                    if geom is None or geom.is_empty:
+                        gpkg_wkb = None
+                    else:
+                        # GPKG Binary Header + WKB
+                        # Fiona/GDAL準拠: flags=0x01 (little-endian, envelope無し, standard)
+                        wkb_data = geom.wkb
+                        env = geom.bounds  # (minx, miny, maxx, maxy)
+                        import struct
+                        header = b'GP'                       # Magic number
+                        header += struct.pack('<B', 0)       # Version
+                        header += struct.pack('<B', 0x01)    # Flags: little-endian, no envelope
+                        header += struct.pack('<i', srs_id or 0)  # SRS ID
+                        gpkg_wkb = header + wkb_data
+                        bounds[0] = min(bounds[0], env[0])
+                        bounds[1] = min(bounds[1], env[1])
+                        bounds[2] = max(bounds[2], env[2])
+                        bounds[3] = max(bounds[3], env[3])
+
+                    vals = [gpkg_wkb]
+                    for c in data_cols:
+                        v = row[c]
+                        if hasattr(v, 'item'):
+                            v = v.item()
+                        if v is None or (isinstance(v, float) and v != v):
+                            vals.append(None)
+                        else:
+                            vals.append(v)
+                    rows_to_insert.append(vals)
+
+                conn.executemany(insert_sql, rows_to_insert)
+
+                # gpkg_contents 登録
+                if bounds[0] != float('inf'):
+                    conn.execute(
+                        "INSERT OR REPLACE INTO gpkg_contents "
+                        "(table_name, data_type, identifier, min_x, min_y, max_x, max_y, srs_id) "
+                        "VALUES (?, 'features', ?, ?, ?, ?, ?, ?)",
+                        (layer_name, layer_name,
+                         bounds[0], bounds[1], bounds[2], bounds[3],
+                         srs_id or 0)
+                    )
+
+                # gpkg_geometry_columns 登録
+                conn.execute(
+                    "INSERT OR REPLACE INTO gpkg_geometry_columns "
+                    "(table_name, column_name, geometry_type_name, srs_id, z, m) "
+                    "VALUES (?, ?, ?, ?, 0, 0)",
+                    (layer_name, geom_col, gpkg_geom_type, srs_id or 0)
+                )
+
+                conn.commit()
+                conn.close()
+                total_features += len(gdf)
+                messages.append(f"  レイヤ '{layer_name}': {len(gdf)} フィーチャ")
+            except Exception as e:
+                messages.append(f"  レイヤ '{layer_name}' 書き込みエラー: {e}")
 
     if total_features > 0:
         # 全レイヤーにQGISスタイルを埋め込む
@@ -2883,7 +3008,7 @@ def _embed_qgis_styles(gpkg_path: str, gdfs: dict):
     <settings calloutType="simple">
       <text-style fieldName="text" fontSize="10" fontSizeUnit="MapUnit"
                   textColor="0,0,0,255"
-                  fontFamily="Noto Sans CJK JP" fontWeight="50"
+                  fontFamily="Hiragino Sans" fontWeight="50"
                   namedStyle="Regular" allowHtml="0" multilineHeight="1">
         <text-buffer bufferDraw="0"/>
         <text-mask maskEnabled="0"/>
@@ -3032,12 +3157,12 @@ def _embed_qgis_styles(gpkg_path: str, gdfs: dict):
 
 
 # ============================================================
-# GUI - Tkinter Application
+# GUI - Tkinter Application (tkinter が利用可能な場合のみ)
 # ============================================================
 class ConverterApp:
     """SFC/DXF → GeoPackage 変換 GUIアプリ"""
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root):
         self.root = root
         self.root.title("SFC/DXF → GeoPackage Converter")
         self.root.geometry("780x780")
